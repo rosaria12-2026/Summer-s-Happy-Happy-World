@@ -235,7 +235,7 @@ async function run(type){
   var note=type==='dilemma'?'Generate ONLY moral dilemma questions with no right answer.':type==='rapid'?'Generate short punchy questions for 90-second answers.':'Generate questions covering friendship, faith, leadership, conflict, character, family, mistakes.';
   document.getElementById('lmsg').textContent='Creating your questions...';
   try{
-    var raw=await api(qSys(note,n),'Generate the question set now.',4000);
+    var raw=await api(qSys(note,n),'Generate the question set now.',2000);
     var parsed=JSON.parse(raw);
     qs=parsed.questions||[];
     document.getElementById('lv').classList.add('hide');
