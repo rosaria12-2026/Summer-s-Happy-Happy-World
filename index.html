@@ -287,6 +287,30 @@ function parseEssay(raw) {
   };
 }
 
+// Parse plain-text questions — no JSON
+function parseQuestions(raw) {
+  var blocks = raw.split(/\n---\n|\n---$|^---\n/m).map(function(b){ return b.trim(); }).filter(Boolean);
+  return blocks.map(function(block) {
+    var lines = block.split('\n');
+    var get = function(label) {
+      for (var i = 0; i < lines.length; i++) {
+        if (lines[i].indexOf(label + ':') === 0) return lines[i].slice(label.length + 1).trim();
+      }
+      return '';
+    };
+    return {
+      topic: get('TOPIC') || 'Interview',
+      question: get('QUESTION') || '',
+      thinking_hint: get('HINT') || '',
+      stoic_quote: get('QUOTE') || '',
+      stoic_quote_meaning: get('MEANING') || '',
+      followup1: get('FOLLOWUP') || '',
+      what_tested: ''
+    };
+  }).filter(function(q){ return q.question.length > 0; });
+}
+
+
 async function callClaude(system,user,max_tokens){
   const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system:system,user:user,max_tokens:max_tokens||1000})});
   const data=await res.json();
@@ -314,7 +338,7 @@ function showTab(t){['practice','essay','diary','badges','progress'].forEach(fun
 function renderBadges(){document.getElementById('badges-grid').innerHTML=ALL_BADGES.map(function(b){return '<div class="badge-item'+(earnedBadges.includes(b.id)?'':' locked')+'"><i class="ti '+b.icon+' badge-icon"></i><div class="badge-name">'+b.name+'</div><div class="badge-desc">'+(earnedBadges.includes(b.id)?b.desc:'???')+'</div></div>';}).join('');}
 function renderProgress(){var pc=document.getElementById('progress-content');pc.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:1rem"><div style="background:white;border:1.5px solid var(--pk2);border-radius:10px;padding:10px;text-align:center"><div style="font-size:11px;color:#993556;font-weight:600;margin-bottom:3px">Stars</div><div style="font-size:24px;font-weight:700;color:#C43060">'+stars+'</div></div><div style="background:white;border:1.5px solid var(--pk2);border-radius:10px;padding:10px;text-align:center"><div style="font-size:11px;color:#993556;font-weight:600;margin-bottom:3px">Questions</div><div style="font-size:24px;font-weight:700;color:#C43060">'+answeredCount+'</div></div><div style="background:white;border:1.5px solid var(--pk2);border-radius:10px;padding:10px;text-align:center"><div style="font-size:11px;color:#993556;font-weight:600;margin-bottom:3px">Badges</div><div style="font-size:24px;font-weight:700;color:#C43060">'+earnedBadges.length+'</div></div></div>'+(sessionHistory.length===0?'<div style="text-align:center;color:#993556;font-size:14px;padding:2rem 0">Answer some questions to see your progress!</div>':sessionHistory.slice(-8).reverse().map(function(s){return '<div style="background:white;border:1.5px solid var(--pk2);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:13px;font-weight:600;color:#3D0D1E">'+(s.topic||'Interview')+'</div><div style="font-size:11px;color:#993556;margin-top:2px">'+s.date+'</div></div><div style="text-align:right"><div style="font-size:20px;font-weight:700;color:'+((s.score||0)>=8?'#1D9E75':(s.score||0)>=6?'#C43060':'#E8A020')+'">'+(s.score||0)+'/10</div><div style="font-size:11px;color:#993556">+'+s.starsEarned+' stars</div></div></div>';}).join(''));}
 
-var SYS_Q = "You are an elite private-school interview coach for a Grade 6 student named Summer applying to Langley Christian School. Summer is intelligent, thoughtful, and capable of deep reflection. Develop depth of thought, moral reasoning, emotional maturity, self-awareness, courage, leadership, and faith-compatible reflection. Draw from Marcus Aurelius Meditations and Stoic philosophy. Questions must be worthy of a genuine private-school interview. For each question respond ONLY in valid JSON with these exact keys: topic, question, stoic_idea, stoic_quote, stoic_quote_meaning, followup1, followup2, what_tested, thinking_hint, weak_answer_warning. Do NOT use line breaks inside any string value. All string values must be short, under 35 words.";
+var SYS_Q = "You are an interview coach for Grade 6 student Summer applying to Langley Christian School. Generate interview questions drawing on Stoic philosophy and Marcus Aurelius. For each question use EXACTLY this format, with --- on its own line between questions:\n\nTOPIC: [topic]\nQUESTION: [the interview question]\nHINT: [one short thinking tip]\nQUOTE: [a short Marcus Aurelius quote]\nMEANING: [one sentence explanation of the quote]\nFOLLOWUP: [one follow-up question they might ask]\n\nDo not number them. Do not add anything else.";
 
 // SYS_FB: plain text response, no JSON needed
 const SYS_FB = "You are an interview coach for Grade 6 student Summer applying to a private school. Evaluate her answer honestly. Respond using EXACTLY this format with these exact labels on separate lines:\n\nSCORE: [number 1-10]\nSTARS: [5 if score>=8, 3 if score>=6, else 2]\nWEAK: [one word from: thought_depth, specificity, emotional_honesty, courage, self_awareness, faith_connection]\nWORKED: [one sentence, what she did well]\nFLAT: [one sentence, what needed more depth]\nNUDGE: [one sentence of coaching advice]\nCHEER: [one short encouraging sentence]\n\nDo not add anything else. Do not use JSON. Just these 7 lines.";
@@ -328,9 +352,8 @@ async function startSession(type){
   var typeNote=type==='dilemma'?'Generate ONLY moral dilemma questions with no clearly right answer.':type==='rapid'?'Generate shorter punchy questions for 90-second answers.':'Generate a varied set covering friendship, faith, leadership, conflict, character, family, mistakes, social issues.';
   document.getElementById('loading-msg').textContent='Creating your questions with care...';
   try{
-    var raw=await callClaude(SYS_Q+' FOR THIS SET: '+typeNote+' Generate '+count+' questions. Return JSON: {"questions":[...]}','Generate the question set now.');
-    var parsed=safeJSON(raw);
-    questions=parsed.questions||[];
+    var raw=await callClaude(SYS_Q+' Generate exactly '+count+' questions. Use the format above, separated by ---. Type: '+typeNote,'Generate the questions now.');
+    questions=parseQuestions(raw);
     document.getElementById('loading-view').classList.add('hidden');
     document.getElementById('session-view').classList.remove('hidden');
     if(type==='dilemma')awardBadge('dilemma');
