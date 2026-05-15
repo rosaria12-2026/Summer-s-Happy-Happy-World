@@ -223,15 +223,62 @@ for(let i=0;i<20;i++){const s=document.createElement('span');s.textContent=DECO[
 const LEVELS=[{min:0,max:19,name:'Curious Thinker'},{min:20,max:49,name:'Deep Wonderer'},{min:50,max:89,name:'Brave Questioner'},{min:90,max:139,name:'Wise Listener'},{min:140,max:199,name:'Honest Heart'},{min:200,max:9999,name:'Luminous Mind'}];
 const ALL_BADGES=[{id:'first_answer',icon:'ti-message',name:'First words',desc:'Answered your first question'},{id:'honest',icon:'ti-heart',name:'Honest heart',desc:'Scored 8+ on honesty'},{id:'deep',icon:'ti-brain',name:'Deep thinker',desc:'Scored 9+ overall'},{id:'five_qs',icon:'ti-star',name:'Five strong',desc:'Completed 5 questions'},{id:'stoic',icon:'ti-flame',name:'Stoic soul',desc:'Reflected on Stoic wisdom'},{id:'diary',icon:'ti-feather',name:'Inner voice',desc:'Wrote a journal entry'},{id:'dilemma',icon:'ti-scale',name:'Moral courage',desc:'Faced a moral dilemma'},{id:'ten_qs',icon:'ti-crown',name:'Ten champion',desc:'Completed 10 questions'},{id:'essay',icon:'ti-writing',name:'Essay writer',desc:'Submitted a timed essay'},{id:'rapid',icon:'ti-bolt',name:'Quick thinker',desc:'Completed rapid fire'},{id:'high_score',icon:'ti-trophy',name:'Brilliant answer',desc:'Scored 9+ three times'},{id:'luminous',icon:'ti-sparkles',name:'Luminous mind',desc:'Reached Level 6'}];
 
-// ── FIX 1: safe JSON parser ──────────────────────────────────────────────────
+// ── FIX 1: safe JSON parser with auto-repair ─────────────────────────────────
 function safeJSON(raw) {
   var text = raw.replace(/```json|```/g, '').trim();
-  try {
-    return JSON.parse(text);
-  } catch (e) {
-    console.error("Bad AI JSON:", text);
-    throw new Error("AI returned broken JSON. Please tap again.");
+
+  // First try: parse as-is
+  try { return JSON.parse(text); } catch(e) {}
+
+  // Second try: strip everything after the last complete value
+  // Find the last } that closes the root object
+  var repaired = text;
+
+  // Remove any trailing incomplete string (open quote never closed)
+  // e.g.  "stronger_version": "I think courage means\n   → cut it off
+  repaired = repaired.replace(/,\s*"[^"]+"\s*:\s*"[^"]*$/, '');
+
+  // Close any open arrays/objects
+  var opens = 0;
+  for (var i = 0; i < repaired.length; i++) {
+    if (repaired[i] === '{') opens++;
+    if (repaired[i] === '}') opens--;
   }
+  // Remove trailing comma before we close
+  repaired = repaired.replace(/,\s*$/, '');
+  for (var j = 0; j < opens; j++) repaired += '}';
+
+  try { return JSON.parse(repaired); } catch(e) {}
+
+  // Third try: extract just the numbers we need with regex fallback
+  console.error("Bad AI JSON (giving fallback):", text);
+  var fallback = {
+    scores: {
+      thought: extractNum(text,'thought'),
+      clarity: extractNum(text,'clarity'),
+      honesty: extractNum(text,'honesty'),
+      courage: extractNum(text,'courage'),
+      self_awareness: extractNum(text,'self_awareness'),
+      depth: extractNum(text,'depth')
+    },
+    overall: extractNum(text,'overall') || 6,
+    weak_dim: extractStr(text,'weak_dim') || 'specificity',
+    stars_earned: extractNum(text,'stars_earned') || 2,
+    what_worked: extractStr(text,'what_worked') || 'You engaged honestly with the question.',
+    what_fell_flat: extractStr(text,'what_fell_flat') || 'Try to add a specific personal example.',
+    coach_nudge: extractStr(text,'coach_nudge') || 'Go deeper next time with a real story.',
+    stronger_version: extractStr(text,'stronger_version') || '',
+    encouragement: extractStr(text,'encouragement') || 'Keep going, Summer!'
+  };
+  return fallback;
+}
+function extractNum(text, key) {
+  var m = text.match(new RegExp('"'+key+'"\\s*:\\s*(\\d+)'));
+  return m ? parseInt(m[1]) : 0;
+}
+function extractStr(text, key) {
+  var m = text.match(new RegExp('"'+key+'"\\s*:\\s*"([^"\\n]{1,200})'));
+  return m ? m[1] : '';
 }
 // ────────────────────────────────────────────────────────────────────────────
 
