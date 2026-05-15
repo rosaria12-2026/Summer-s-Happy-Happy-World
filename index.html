@@ -311,25 +311,8 @@ function renderProgress(){var pc=document.getElementById('progress-content');pc.
 
 var SYS_Q = "You are an elite private-school interview coach for a Grade 6 student named Summer applying to Langley Christian School. Summer is intelligent, thoughtful, and capable of deep reflection. Develop depth of thought, moral reasoning, emotional maturity, self-awareness, courage, leadership, and faith-compatible reflection. Draw from Marcus Aurelius Meditations and Stoic philosophy. Questions must be worthy of a genuine private-school interview. For each question respond ONLY in valid JSON with these exact keys: topic, question, stoic_idea, stoic_quote, stoic_quote_meaning, followup1, followup2, what_tested, thinking_hint, weak_answer_warning. Do NOT use line breaks inside any string value. All string values must be short, under 35 words.";
 
-// ── FIX 2: removed stray "var" before "const", added JSON constraint lines ──
-const SYS_FB = `You are a rigorous honest interview coach evaluating a Grade 6 girl named Summer.
-
-Hold high standards. Do not inflate scores.
-
-Scoring: 9-10 = genuinely impressive depth with specific examples. 7-8 = good content that could go deeper. 5-6 = surface level. 3-4 = vague or generic. 1-2 = missing the point.
-
-Identify ONE weak dimension from: thought_depth, specificity, emotional_honesty, courage, self_awareness, faith_connection, follow_through.
-
-Respond ONLY with valid raw JSON. Do NOT use markdown. Do NOT include explanations outside JSON.
-
-Required JSON schema:
-{"scores":{"thought":number,"clarity":number,"honesty":number,"courage":number,"self_awareness":number,"depth":number},"overall":number,"weak_dim":string,"stars_earned":number,"what_worked":string,"what_fell_flat":string,"coach_nudge":string,"stronger_version":string,"encouragement":string}
-
-CRITICAL RULES FOR JSON OUTPUT:
-Do NOT use line breaks inside any string value.
-All string values must be short, under 35 words.
-Every string must open and close with a double-quote on the same line.`;
-// ────────────────────────────────────────────────────────────────────────────
+// SYS_FB: compact single-line JSON prompt
+const SYS_FB = "You are a strict interview coach for Grade 6 student Summer. Score honestly: 9-10=exceptional with specific examples, 7-8=good, 5-6=surface, 3-4=vague, 1-2=off target. stars_earned: give 5 if overall>=8, give 3 if overall>=6, else give 2. weak_dim must be one of: thought_depth, specificity, emotional_honesty, courage, self_awareness, faith_connection, follow_through. RULES: respond with ONLY one single-line JSON object. No markdown. No newlines inside strings. Every string value under 15 words. Output format: {\"scores\":{\"thought\":N,\"clarity\":N,\"honesty\":N,\"courage\":N,\"self_awareness\":N,\"depth\":N},\"overall\":N,\"weak_dim\":\"word\",\"stars_earned\":N,\"what_worked\":\"text\",\"what_fell_flat\":\"text\",\"coach_nudge\":\"text\",\"stronger_version\":\"text\",\"encouragement\":\"text\"}";
 
 async function startSession(type){
   sessionType=type;questions=[];answers=[];currQ=0;
@@ -381,7 +364,7 @@ async function submitAnswer(){
   fbDiv.innerHTML='<div class="loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Reading your answer carefully...</span></div>';
   var q=questions[currQ];
   try{
-    var raw=await callClaude(SYS_FB,'Topic: '+q.topic+'\nQuestion: '+q.question+'\nAnswer: '+ans+'\nWhat tested: '+(q.what_tested||''),800);
+    var raw=await callClaude(SYS_FB,'Topic: '+q.topic+'\nQuestion: '+q.question+'\nAnswer: '+ans+'\nWhat tested: '+(q.what_tested||''),1200);
     var d=safeJSON(raw);
     var se=d.stars_earned||2;
     awardStars(se);answeredCount++;
