@@ -14,7 +14,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-3-5-haiku-20241022',
-        max_tokens: max_tokens || 4000,
+        max_tokens: max_tokens || 1000,
         system: system,
         messages: [{ role: 'user', content: user }]
       })
@@ -30,33 +30,10 @@ export default async function handler(req, res) {
           if (start !== -1 && end !== -1 && end > start) {
             text = text.slice(start, end + 1);
             try {
-              // Parse and clean by re-stringifying
               const obj = JSON.parse(text);
-              // Deep clean all string values
-              const clean = JSON.parse(JSON.stringify(obj, (key, val) => {
-                if (typeof val === 'string') {
-                  return val
-                    .replace(/\n/g, ' ')
-                    .replace(/\r/g, ' ')
-                    .replace(/\t/g, ' ')
-                    .replace(/\\/g, '')
-                    .trim();
-                }
-                return val;
-              }));
-              block.text = JSON.stringify(clean);
+              block.text = JSON.stringify(obj);
             } catch(e) {
-              // Manual fix for unterminated strings
-              let fixed = text
-                .replace(/[\r\n\t]/g, ' ')
-                .replace(/([^\\])\\([^"\\\/bfnrtu])/g, '$1$2')
-                .replace(/\s+/g, ' ');
-              try {
-                const obj2 = JSON.parse(fixed);
-                block.text = JSON.stringify(obj2);
-              } catch(e2) {
-                block.text = JSON.stringify({ error: 'Could not parse response' });
-              }
+              block.text = text.replace(/[\r\n\t]/g, ' ');
             }
           }
         }
