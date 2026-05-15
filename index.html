@@ -223,67 +223,69 @@ for(let i=0;i<20;i++){const s=document.createElement('span');s.textContent=DECO[
 const LEVELS=[{min:0,max:19,name:'Curious Thinker'},{min:20,max:49,name:'Deep Wonderer'},{min:50,max:89,name:'Brave Questioner'},{min:90,max:139,name:'Wise Listener'},{min:140,max:199,name:'Honest Heart'},{min:200,max:9999,name:'Luminous Mind'}];
 const ALL_BADGES=[{id:'first_answer',icon:'ti-message',name:'First words',desc:'Answered your first question'},{id:'honest',icon:'ti-heart',name:'Honest heart',desc:'Scored 8+ on honesty'},{id:'deep',icon:'ti-brain',name:'Deep thinker',desc:'Scored 9+ overall'},{id:'five_qs',icon:'ti-star',name:'Five strong',desc:'Completed 5 questions'},{id:'stoic',icon:'ti-flame',name:'Stoic soul',desc:'Reflected on Stoic wisdom'},{id:'diary',icon:'ti-feather',name:'Inner voice',desc:'Wrote a journal entry'},{id:'dilemma',icon:'ti-scale',name:'Moral courage',desc:'Faced a moral dilemma'},{id:'ten_qs',icon:'ti-crown',name:'Ten champion',desc:'Completed 10 questions'},{id:'essay',icon:'ti-writing',name:'Essay writer',desc:'Submitted a timed essay'},{id:'rapid',icon:'ti-bolt',name:'Quick thinker',desc:'Completed rapid fire'},{id:'high_score',icon:'ti-trophy',name:'Brilliant answer',desc:'Scored 9+ three times'},{id:'luminous',icon:'ti-sparkles',name:'Luminous mind',desc:'Reached Level 6'}];
 
-// ── safe JSON parser: handles truncation, unescaped quotes, newlines in strings
-function safeJSON(raw) {
-  var text = raw.replace(/```json[\s\S]*?```|```/g, '').trim();
-  // Extract outermost { ... }
-  var first = text.indexOf('{');
-  var last = text.lastIndexOf('}');
-  if (first !== -1 && last !== -1) text = text.slice(first, last + 1);
-
-  // Step 1: try straight parse
-  try { return JSON.parse(text); } catch(e) {}
-
-  // Step 2: sanitize string values
-  // Replace newlines/tabs inside strings, then fix unescaped inner quotes
-  var fixed = text
-    .replace(/[\r\n\t]+/g, ' ')           // newlines → space
-    .replace(/([^\\])"(\s*[^:,\}\]{\[])/g, '$1\\"$2') // naive inner-quote escape
-    ;
-  try { return JSON.parse(fixed); } catch(e) {}
-
-  // Step 3: truncation repair — drop last incomplete key:value pair then close
-  var repaired = text.replace(/[\r\n\t]+/g, ' ');
-  repaired = repaired.replace(/,\s*"[^"]*"\s*:\s*"[^"]*$/, ''); // drop open string
-  repaired = repaired.replace(/,\s*"[^"]*"\s*:\s*$/, '');        // drop open key
-  repaired = repaired.replace(/,\s*$/, '');
-  var opens = 0;
-  for (var ci = 0; ci < repaired.length; ci++) {
-    if (repaired[ci] === '{') opens++;
-    if (repaired[ci] === '}') opens--;
-  }
-  for (var oi = 0; oi < opens; oi++) repaired += '}';
-  try { return JSON.parse(repaired); } catch(e) {}
-
-  // Step 4: regex fallback — scrape what we can
-  console.error('safeJSON fallback used. Raw:', text.slice(0, 300));
+// Plain text parser — no JSON, no breakage
+function parseFeedback(raw) {
+  var lines = raw.replace(/\r/g, '').split('\n');
+  var get = function(label) {
+    for (var i = 0; i < lines.length; i++) {
+      if (lines[i].indexOf(label + ':') === 0) {
+        return lines[i].slice(label.length + 1).trim();
+      }
+    }
+    return '';
+  };
+  var overall = parseInt(get('SCORE')) || 6;
+  var stars = parseInt(get('STARS')) || 2;
   return {
+    overall: overall,
+    stars_earned: stars,
+    weak_dim: get('WEAK') || 'specificity',
+    what_worked: get('WORKED') || 'You gave an honest effort.',
+    what_fell_flat: get('FLAT') || 'Try adding a specific example.',
+    coach_nudge: get('NUDGE') || 'Go deeper with a real story.',
+    encouragement: get('CHEER') || 'Keep going, Summer!',
     scores: {
-      thought: extractNum(text,'thought'),
-      clarity: extractNum(text,'clarity'),
-      honesty: extractNum(text,'honesty'),
-      courage: extractNum(text,'courage'),
-      self_awareness: extractNum(text,'self_awareness'),
-      depth: extractNum(text,'depth')
-    },
-    overall: extractNum(text,'overall') || 6,
-    weak_dim: extractStr(text,'weak_dim') || 'specificity',
-    stars_earned: extractNum(text,'stars_earned') || 2,
-    what_worked: extractStr(text,'what_worked') || 'You gave an honest effort.',
-    what_fell_flat: extractStr(text,'what_fell_flat') || 'Try adding a specific example.',
-    coach_nudge: extractStr(text,'coach_nudge') || 'Go deeper with a real story.',
-    encouragement: extractStr(text,'encouragement') || 'Keep going, Summer!'
+      thought: overall, clarity: overall, honesty: overall,
+      courage: overall, self_awareness: overall, depth: overall
+    }
   };
 }
-function extractNum(text, key) {
-  var m = text.match(new RegExp('"' + key + '"\\s*:\\s*(\\d+)'));
-  return m ? parseInt(m[1]) : 0;
+
+function parseDiary(raw) {
+  var lines = raw.replace(/\r/g, '').split('\n');
+  var get = function(label) {
+    for (var i = 0; i < lines.length; i++) {
+      if (lines[i].indexOf(label + ':') === 0) return lines[i].slice(label.length + 1).trim();
+    }
+    return '';
+  };
+  return {
+    stars_earned: 3,
+    observation: get('NOTICED') || 'You thought deeply about this.',
+    follow_up_question: get('QUESTION') || 'What would you do differently next time?',
+    philosophical_connection: get('WISDOM') || 'Marcus Aurelius said growth comes from honest reflection.',
+    strength_seen: get('STRENGTH') || 'Your honesty is a real strength.'
+  };
 }
-function extractStr(text, key) {
-  var m = text.match(new RegExp('"' + key + '"\\s*:\\s*"([^"\\n]{1,120})'));
-  return m ? m[1] : '';
+function parseEssay(raw) {
+  var lines = raw.replace(/\r/g, '').split('\n');
+  var get = function(label) {
+    for (var i = 0; i < lines.length; i++) {
+      if (lines[i].indexOf(label + ':') === 0) return lines[i].slice(label.length + 1).trim();
+    }
+    return '';
+  };
+  var score = parseInt(get('SCORE')) || 6;
+  return {
+    overall: score,
+    letter_grade: get('GRADE') || 'C',
+    strongest_part: get('STRONG') || '',
+    biggest_weakness: get('WEAK') || '',
+    one_revision_to_raise_grade: get('FIX') || '',
+    honest_verdict: get('VERDICT') || '',
+    scores: { argument: score, evidence: score, voice: score, structure: score, values_depth: score, courage: score }
+  };
 }
-// ──────────────────────────────────────────────────────────────────────────────
 
 async function callClaude(system,user,max_tokens){
   const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system:system,user:user,max_tokens:max_tokens||1000})});
@@ -314,8 +316,8 @@ function renderProgress(){var pc=document.getElementById('progress-content');pc.
 
 var SYS_Q = "You are an elite private-school interview coach for a Grade 6 student named Summer applying to Langley Christian School. Summer is intelligent, thoughtful, and capable of deep reflection. Develop depth of thought, moral reasoning, emotional maturity, self-awareness, courage, leadership, and faith-compatible reflection. Draw from Marcus Aurelius Meditations and Stoic philosophy. Questions must be worthy of a genuine private-school interview. For each question respond ONLY in valid JSON with these exact keys: topic, question, stoic_idea, stoic_quote, stoic_quote_meaning, followup1, followup2, what_tested, thinking_hint, weak_answer_warning. Do NOT use line breaks inside any string value. All string values must be short, under 35 words.";
 
-// SYS_FB: compact single-line JSON prompt
-const SYS_FB = "You are a strict interview coach for Grade 6 student Summer. Score honestly: 9-10=exceptional, 7-8=good, 5-6=surface, 3-4=vague, 1-2=off target. stars_earned: 5 if overall>=8, 3 if overall>=6, else 2. weak_dim must be one of: thought_depth specificity emotional_honesty courage self_awareness faith_connection follow_through. OUTPUT: one single-line JSON only, no markdown, no newlines, every string under 12 words. Schema: {\"scores\":{\"thought\":N,\"clarity\":N,\"honesty\":N,\"courage\":N,\"self_awareness\":N,\"depth\":N},\"overall\":N,\"weak_dim\":\"word\",\"stars_earned\":N,\"what_worked\":\"max 12 words\",\"what_fell_flat\":\"max 12 words\",\"coach_nudge\":\"max 12 words\",\"encouragement\":\"max 12 words\"}";
+// SYS_FB: plain text response, no JSON needed
+const SYS_FB = "You are an interview coach for Grade 6 student Summer applying to a private school. Evaluate her answer honestly. Respond using EXACTLY this format with these exact labels on separate lines:\n\nSCORE: [number 1-10]\nSTARS: [5 if score>=8, 3 if score>=6, else 2]\nWEAK: [one word from: thought_depth, specificity, emotional_honesty, courage, self_awareness, faith_connection]\nWORKED: [one sentence, what she did well]\nFLAT: [one sentence, what needed more depth]\nNUDGE: [one sentence of coaching advice]\nCHEER: [one short encouraging sentence]\n\nDo not add anything else. Do not use JSON. Just these 7 lines.";
 
 async function startSession(type){
   sessionType=type;questions=[];answers=[];currQ=0;
@@ -368,7 +370,7 @@ async function submitAnswer(){
   var q=questions[currQ];
   try{
     var raw=await callClaude(SYS_FB,'Topic: '+q.topic+'\nQuestion: '+q.question+'\nAnswer: '+ans+'\nWhat tested: '+(q.what_tested||''),1200);
-    var d=safeJSON(raw);
+    var d=parseFeedback(raw);
     var se=d.stars_earned||2;
     awardStars(se);answeredCount++;
     if(answeredCount===1)awardBadge('first_answer');
@@ -401,7 +403,7 @@ function resetSession(){document.getElementById('session-done').classList.add('h
 function selectEssayType(t){essayType=t;['persuasive','reflective','moral'].forEach(function(x){var e=document.getElementById('et-'+x);e.style.background=x===t?'var(--pk1)':'white';e.style.border=x===t?'1.5px solid var(--pk3)':'1.5px solid var(--pk2)';e.style.fontWeight=x===t?'600':'400';});}
 
 var SYS_ESSAY_PROMPT = "You are a challenging essay prompt writer for a Grade 6 girl named Summer applying to Langley Christian School. Write ONE deep essay prompt requiring a clear argument, real personal examples, and genuine reflection on values or faith. Respond with ONLY the essay prompt sentence.";
-var SYS_ESSAY_GRADE = "You are a rigorous writing evaluator for a Grade 6 Christian school admissions essay. Hold high standards. Score 9-10 for exceptional with real argument and specific personal examples; 7-8 for good argument; 5-6 for surface level; 3-4 for vague; 1-2 for off prompt. Respond ONLY in valid JSON with these exact keys: scores (object with argument evidence voice structure values_depth courage all numbers), overall (number), letter_grade (A B C D or F), overall_note (string), strongest_part (string), biggest_weakness (string), missing_element (string), one_revision_to_raise_grade (string), honest_verdict (string). Do NOT use line breaks inside any string value. All string values must be short, under 35 words.";
+var SYS_ESSAY_GRADE = "You are a writing evaluator for a Grade 6 private school admissions essay. Score honestly. Respond using EXACTLY this format:\n\nSCORE: [number 1-10]\nGRADE: [A, B, C, D, or F]\nSTRONG: [one sentence about the strongest part]\nWEAK: [one sentence about the biggest weakness]\nFIX: [one specific revision to raise the grade]\nVERDICT: [one honest overall sentence]\n\nDo not add anything else. Just these 6 lines.";
 
 async function startEssay(){
   document.getElementById('essay-setup').classList.add('hidden');
@@ -431,7 +433,7 @@ async function submitEssay(){
   document.getElementById('essay-active').classList.add('hidden');document.getElementById('essay-loading').classList.remove('hidden');
   try{
     var raw=await callClaude(SYS_ESSAY_GRADE+(words<150?' Short essay - penalize insufficient development.':''),'Prompt: '+(window._essayPrompt||'')+'\nTime: '+timeUsed+' min\nWords: '+words+'\nEssay:\n'+text);
-    var d=safeJSON(raw);
+    var d=parseFeedback(raw);
     awardStars(d.overall>=8?5:d.overall>=6?3:2);awardBadge('essay');save();updateHero();
     document.getElementById('essay-loading').classList.add('hidden');
     var s=d.scores||{};var gc={'A':'#1D9E75','B':'#C43060','C':'#E8A020','D':'#A32D2D','F':'#A32D2D'}[d.letter_grade]||'#C43060';
@@ -449,7 +451,7 @@ async function submitEssay(){
 }
 
 var SYS_DIARY_PROMPT = "You are a wise warm journal prompt writer for an intelligent Grade 6 girl named Summer. Write ONE deep reflective journaling prompt. It should invite her to think about something personal, real, and meaningful. Draw on Stoic, Christian, and philosophical themes of inner growth. Feel like a question from a wise gentle friend. Output ONLY the prompt sentence.";
-var SYS_DIARY_FEEDBACK = "You are a warm wise journal coach for a Grade 6 girl named Summer. Read her entry with care and respect. Do NOT grade it. Respond with genuine insight like a mentor. Respond ONLY in valid JSON with these exact keys: observation (string - genuine observation NOT a compliment), follow_up_question (string), philosophical_connection (string - one Stoic or Christian idea), strength_seen (string), stars_earned (number - always 3). Do NOT use line breaks inside any string value. All string values must be short, under 35 words.";
+var SYS_DIARY_FEEDBACK = "You are a warm journal coach for Grade 6 girl Summer. Read her entry with care. Respond using EXACTLY this format:\n\nSTARS: 3\nNOTICED: [one genuine observation sentence]\nQUESTION: [one follow-up question to think about]\nWISDOM: [one Stoic or Christian idea, one sentence]\nSTRENGTH: [one strength you see in her, one sentence]\n\nDo not add anything else. Just these 5 lines.";
 
 async function startDiary(){
   document.getElementById('diary-setup').classList.add('hidden');document.getElementById('diary-loading').classList.remove('hidden');
@@ -478,7 +480,7 @@ async function submitDiary(){
   document.getElementById('diary-active').classList.add('hidden');document.getElementById('diary-loading').classList.remove('hidden');
   try{
     var raw=await callClaude(SYS_DIARY_FEEDBACK,'Prompt: '+(window._diaryPrompt||'')+'\nEntry ('+words+' words):\n'+text);
-    var d=safeJSON(raw);
+    var d=parseFeedback(raw);
     awardStars(d.stars_earned||3);awardBadge('diary');save();updateHero();
     document.getElementById('diary-loading').classList.add('hidden');
     var fbDiv=document.getElementById('diary-feedback');
