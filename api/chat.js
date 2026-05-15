@@ -23,14 +23,27 @@ export default async function handler(req, res) {
     if (data.content && Array.isArray(data.content)) {
       data.content = data.content.map(block => {
         if (block.type === 'text' && block.text) {
-          let text = block.text;
-          // Remove markdown code blocks
-          text = text.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
-          // Extract JSON object
+          let text = block.text.trim();
+          // Remove markdown
+          text = text.replace(/^```json\s*/i, '').replace(/\s*```\s*$/i, '').trim();
+          // Extract JSON boundaries
           const start = text.indexOf('{');
           const end = text.lastIndexOf('}');
           if (start !== -1 && end !== -1 && end > start) {
-            block.text = text.slice(start, end + 1);
+            text = text.slice(start, end + 1);
+            // Parse and re-stringify to fix all issues
+            try {
+              const parsed = JSON.parse(text);
+              block.text = JSON.stringify(parsed);
+            } catch(e) {
+              // If parse fails, do manual cleanup
+              text = text
+                .replace(/\r\n/g, ' ')
+                .replace(/\r/g, ' ')
+                .replace(/\n/g, ' ')
+                .replace(/\t/g, ' ');
+              block.text = text;
+            }
           }
         }
         return block;
