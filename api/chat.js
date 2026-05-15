@@ -20,6 +20,19 @@ export default async function handler(req, res) {
       })
     });
     var data = await response.json();
+    if (data.content && Array.isArray(data.content)) {
+      data.content = data.content.map(function(block) {
+        if (block.text) {
+          var text = block.text;
+          var start = text.indexOf('{');
+          var end = text.lastIndexOf('}');
+          if (start !== -1 && end !== -1) {
+            block.text = text.slice(start, end + 1);
+          }
+        }
+        return block;
+      });
+    }
     res.status(200).json(data);
   } catch (e) {
     res.status(500).json({ error: e.message });
