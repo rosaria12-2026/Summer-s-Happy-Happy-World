@@ -38,8 +38,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;background
 .fu{background:#FFF0F5;border:1px solid #FFB3CE;border-radius:10px;padding:8px 12px;margin-top:8px;font-size:13px;color:#7A1A3A}
 .ans{width:100%;min-height:100px;padding:12px;border:1.5px solid #FFB3CE;border-radius:12px;font-size:14px;font-family:inherit;color:#3D0D1E;background:white;resize:vertical;line-height:1.65}
 .ans:focus{outline:none;border-color:#E8527A}
-.essay-ans{width:100%;min-height:220px;padding:14px;border:1.5px solid #FFB3CE;border-radius:12px;font-size:14px;font-family:inherit;color:#3D0D1E;background:white;resize:vertical;line-height:1.8}
-.diary-ans{width:100%;min-height:160px;padding:12px;border:1.5px solid #FFB3CE;border-radius:12px;font-size:14px;font-family:inherit;color:#3D0D1E;background:white;resize:vertical;line-height:1.8}
 .clk{display:flex;align-items:center;justify-content:space-between;background:white;border:1.5px solid #FFD6E7;border-radius:12px;padding:10px 16px;margin-bottom:10px}
 .clk-num{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;color:#3D0D1E}
 .clk-num.warn{color:#E8A020}
@@ -70,9 +68,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;background
 .bdg-name{font-size:11px;color:#993556;font-weight:700;margin-bottom:2px}
 .bdg-desc{font-size:10px;color:#C43060}
 .bdg.locked{opacity:0.35;filter:grayscale(1)}
-.diary-box{background:#FFD6E7;padding:1rem 1.25rem;margin-bottom:1rem;font-size:14px;color:#3D0D1E;line-height:1.65;font-style:italic;border-left:3px solid #E8527A;border-radius:0 12px 12px 0}
-.dots{display:flex;gap:5px;margin-bottom:1rem;flex-wrap:wrap}
-.dot-item{width:10px;height:10px;border-radius:50%}
+.prog-num{font-size:13px;color:#993556;text-align:center;margin-bottom:1rem;font-weight:600}
 .ld{display:flex;align-items:center;gap:10px;color:#993556;font-size:14px;padding:2rem 0}
 .d{width:8px;height:8px;border-radius:50%;background:#E8527A;animation:bounce 1s infinite;display:inline-block}
 .d:nth-child(2){animation-delay:.15s}
@@ -85,7 +81,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;background
 .row{display:flex;gap:8px;align-items:center}
 .f1{flex:1}
 hr{border:none;border-top:1px solid #FFD6E7;margin:.75rem 0}
-.wc{font-size:12px;color:#993556;text-align:right;margin-top:4px}
 </style>
 </head>
 <body>
@@ -103,308 +98,180 @@ hr{border:none;border-top:1px solid #FFD6E7;margin:.75rem 0}
 </div>
 <div class="nav">
   <button class="nb on" onclick="go('practice')"><i class="ti ti-sparkles"></i> Practice</button>
-  <button class="nb" onclick="go('essay')"><i class="ti ti-writing"></i> Essay</button>
-  <button class="nb" onclick="go('diary')"><i class="ti ti-feather"></i> Diary</button>
   <button class="nb" onclick="go('badges')"><i class="ti ti-medal"></i> Badges</button>
   <button class="nb" onclick="go('progress')"><i class="ti ti-chart-bar"></i> Progress</button>
 </div>
 <div class="pg">
+
 <div id="t-practice">
   <div id="sv">
     <div class="grid2">
-      <div class="card" onclick="run('interview')"><i class="ti ti-microphone card-icon"></i><div class="card-title">Interview</div><div class="card-desc">10 deep questions with Stoic wisdom. 5 min each.</div></div>
-      <div class="card" onclick="run('dilemma')"><i class="ti ti-scale card-icon"></i><div class="card-title">Moral dilemmas</div><div class="card-desc">No easy answers. Pick a side and defend it.</div></div>
+      <div class="card" onclick="startQ('interview')"><i class="ti ti-microphone card-icon"></i><div class="card-title">Interview</div><div class="card-desc">Deep questions with Stoic wisdom. 5 min each.</div></div>
+      <div class="card" onclick="startQ('dilemma')"><i class="ti ti-scale card-icon"></i><div class="card-title">Moral dilemma</div><div class="card-desc">No easy answers. Pick a side and defend it.</div></div>
     </div>
-    <div class="card" onclick="run('rapid')" style="padding:1rem 1.25rem;display:flex;align-items:center;gap:14px">
+    <div class="card" onclick="startQ('rapid')" style="padding:1rem 1.25rem;display:flex;align-items:center;gap:14px">
       <i class="ti ti-bolt" style="font-size:24px;color:#E8527A;flex-shrink:0"></i>
-      <div><div class="card-title">Rapid fire</div><div class="card-desc">5 questions. 90 seconds each.</div></div>
+      <div><div class="card-title">Rapid fire</div><div class="card-desc">Quick questions. 90 seconds each.</div></div>
     </div>
   </div>
-  <div id="lv" class="hide"><div class="ld"><div class="d"></div><div class="d"></div><div class="d"></div><span id="lmsg">Loading...</span></div></div>
+
   <div id="qv" class="hide">
-    <div class="clk"><div><div class="clk-lbl" id="clbl">Time remaining</div><div class="clk-num" id="cnum">5:00</div></div><div class="row"><button class="btn2" onclick="pause()" id="pbtn"><i class="ti ti-player-pause"></i></button><button class="btn2" onclick="skip()"><i class="ti ti-arrow-right"></i></button><span style="font-size:12px;color:#993556;font-weight:600" id="qctr">Q1</span></div></div>
-    <div class="dots" id="qdots"></div>
-    <div id="qarea"></div>
-    <div id="aw"><textarea class="ans" id="ain" placeholder="Take a breath. Then answer honestly - not perfectly..."></textarea><div style="margin-top:10px" class="row"><button class="btn f1" onclick="submit()"><i class="ti ti-send"></i> Submit my answer</button></div></div>
+    <div class="clk">
+      <div><div class="clk-lbl" id="clbl">Time remaining</div><div class="clk-num" id="cnum">5:00</div></div>
+      <div class="row">
+        <button class="btn2" onclick="pause()" id="pbtn"><i class="ti ti-player-pause"></i></button>
+        <button class="btn2" onclick="nextQ()"><i class="ti ti-arrow-right"></i> Skip</button>
+      </div>
+    </div>
+    <div class="prog-num" id="qprog">Question 1</div>
+    <div id="qarea"><div class="ld"><div class="d"></div><div class="d"></div><div class="d"></div><span>Getting your question...</span></div></div>
+    <div id="aw" class="hide">
+      <textarea class="ans" id="ain" placeholder="Take a breath. Then answer honestly - not perfectly..."></textarea>
+      <div style="margin-top:10px" class="row">
+        <button class="btn f1" onclick="submitAns()"><i class="ti ti-send"></i> Submit my answer</button>
+      </div>
+    </div>
     <div id="fba" class="hide"></div>
   </div>
-  <div id="done" class="hide"></div>
-</div>
-<div id="t-essay" class="hide">
-  <div id="es">
-    <div style="background:white;border:1.5px solid #FFD6E7;border-radius:14px;padding:1rem 1.25rem;margin-bottom:1rem;font-size:13px;color:#993556;line-height:1.65">30-minute timed essay. Make a clear argument, use real personal examples.</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:1rem">
-      <div onclick="et('persuasive')" id="ep" style="background:#FFF0F5;border:1.5px solid #FFB3CE;border-radius:10px;padding:10px;text-align:center;cursor:pointer;font-size:13px;font-weight:600;color:#993556">Persuasive</div>
-      <div onclick="et('reflective')" id="er" style="background:white;border:1.5px solid #FFD6E7;border-radius:10px;padding:10px;text-align:center;cursor:pointer;font-size:13px;color:#993556">Reflective</div>
-      <div onclick="et('moral')" id="em" style="background:white;border:1.5px solid #FFD6E7;border-radius:10px;padding:10px;text-align:center;cursor:pointer;font-size:13px;color:#993556">Moral</div>
-    </div>
-    <button class="btn" onclick="startEssay()" style="width:100%"><i class="ti ti-sparkles"></i> Get my essay prompt</button>
-  </div>
-  <div id="ea" class="hide">
-    <div class="clk"><div><div class="clk-lbl">Essay time</div><div class="clk-num" id="eck">30:00</div></div><button class="btn2" onclick="epause()" id="epbtn"><i class="ti ti-player-pause"></i></button></div>
-    <div class="qbox" id="epc"></div>
-    <textarea class="essay-ans" id="etxt" placeholder="Write your essay here. Aim for 300-500 words." oninput="ewc()"></textarea>
-    <div class="wc" id="ewcd">0 words</div>
-    <div style="margin-top:10px" class="row"><button class="btn f1" onclick="submitEssay()"><i class="ti ti-send"></i> Submit essay</button><button class="btn2" onclick="startEssay()"><i class="ti ti-refresh"></i> New prompt</button></div>
-  </div>
-  <div id="el" class="hide"><div class="ld"><div class="d"></div><div class="d"></div><div class="d"></div><span>Reading your essay...</span></div></div>
-  <div id="ef" class="hide"></div>
-</div>
-<div id="t-diary" class="hide">
-  <div id="ds">
-    <div style="background:white;border:1.5px solid #FFD6E7;border-radius:14px;padding:1rem 1.25rem;margin-bottom:1rem;font-size:13px;color:#993556;line-height:1.65">Your private thinking space. Write honestly. Nobody grades this.</div>
-    <button class="btn" onclick="startDiary()" style="width:100%"><i class="ti ti-sparkles"></i> Give me a journaling prompt</button>
-  </div>
-  <div id="da" class="hide">
-    <div class="clk"><div><div class="clk-lbl">Writing time</div><div class="clk-num" id="dck">30:00</div></div><button class="btn2" onclick="dpause()" id="dpbtn"><i class="ti ti-player-pause"></i></button></div>
-    <div class="diary-box" id="dpt"></div>
-    <textarea class="diary-ans" id="dtxt" placeholder="Write what you really think and feel. Just honesty." oninput="dwc()"></textarea>
-    <div class="wc" id="dwcd">0 words</div>
-    <div style="margin-top:10px" class="row"><button class="btn f1" onclick="submitDiary()"><i class="ti ti-send"></i> Done writing</button><button class="btn2" onclick="resetDiary()">Start over</button></div>
-  </div>
-  <div id="dl" class="hide"><div class="ld"><div class="d"></div><div class="d"></div><div class="d"></div><span>Reading your journal...</span></div></div>
-  <div id="df" class="hide"></div>
-</div>
-<div id="t-badges" class="hide"><div class="bdg-grid" id="bg"></div></div>
-<div id="t-progress" class="hide"><div id="pc"></div></div>
 </div>
 
+<div id="t-badges" class="hide"><div class="bdg-grid" id="bg"></div></div>
+<div id="t-progress" class="hide"><div id="pc"></div></div>
+
+</div>
 <script>
 var DC=['*','o','~'];
 var de=document.getElementById('deco');
 for(var i=0;i<20;i++){var sp=document.createElement('span');sp.textContent=DC[i%DC.length];sp.style.cssText='left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;animation-delay:'+Math.random()*4+'s;font-size:'+(10+Math.random()*14)+'px';de.appendChild(sp);}
 
 var LV=[{min:0,max:19,n:'Curious Thinker'},{min:20,max:49,n:'Deep Wonderer'},{min:50,max:89,n:'Brave Questioner'},{min:90,max:139,n:'Wise Listener'},{min:140,max:199,n:'Honest Heart'},{min:200,max:9999,n:'Luminous Mind'}];
-var BDG=[{id:'first',icon:'ti-message',name:'First words',desc:'Answered first question'},{id:'honest',icon:'ti-heart',name:'Honest heart',desc:'Scored 8+ on honesty'},{id:'deep',icon:'ti-brain',name:'Deep thinker',desc:'Scored 9+ overall'},{id:'five',icon:'ti-star',name:'Five strong',desc:'Completed 5 questions'},{id:'stoic',icon:'ti-flame',name:'Stoic soul',desc:'Reflected on Stoic wisdom'},{id:'diary',icon:'ti-feather',name:'Inner voice',desc:'Wrote a journal entry'},{id:'dilemma',icon:'ti-scale',name:'Moral courage',desc:'Faced a moral dilemma'},{id:'ten',icon:'ti-crown',name:'Ten champion',desc:'Completed 10 questions'},{id:'essay',icon:'ti-writing',name:'Essay writer',desc:'Submitted an essay'},{id:'rapid',icon:'ti-bolt',name:'Quick thinker',desc:'Completed rapid fire'},{id:'high',icon:'ti-trophy',name:'Brilliant',desc:'Scored 9+ three times'},{id:'lum',icon:'ti-sparkles',name:'Luminous mind',desc:'Reached Level 6'}];
+var BDG=[{id:'first',icon:'ti-message',name:'First words',desc:'Answered first question'},{id:'honest',icon:'ti-heart',name:'Honest heart',desc:'Scored 8+ on honesty'},{id:'deep',icon:'ti-brain',name:'Deep thinker',desc:'Scored 9+ overall'},{id:'five',icon:'ti-star',name:'Five strong',desc:'Completed 5 questions'},{id:'ten',icon:'ti-crown',name:'Ten champion',desc:'Completed 10 questions'},{id:'dilemma',icon:'ti-scale',name:'Moral courage',desc:'Faced a moral dilemma'},{id:'rapid',icon:'ti-bolt',name:'Quick thinker',desc:'Completed rapid fire'},{id:'lum',icon:'ti-sparkles',name:'Luminous mind',desc:'Reached Level 6'}];
 
-var JSON_RULE = ' Respond with ONLY valid JSON. No extra text. No markdown. No apostrophes or single quotes inside string values. Use only double quotes for JSON strings.';
-
-async function api(sys, usr, mt) {
+async function api(sys, usr) {
   var r = await fetch('/api/chat', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ system: sys, user: usr, max_tokens: mt || 2000 })
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({system: sys, user: usr, max_tokens: 800})
   });
   var d = await r.json();
-  if (!r.ok || d.error) {
-    throw new Error((d.error && d.error.message) ? d.error.message : JSON.stringify(d.error) || 'API error');
-  }
-  var txt = Array.isArray(d.content) ? d.content.map(function(b){ return b.text || ''; }).join('') : (d.text || '');
-  var clean = txt.replace(/```json\s*/gi, '').replace(/```\s*$/gi, '').trim();
-  var start = clean.indexOf('{');
-  var end = clean.lastIndexOf('}');
-  if (start !== -1 && end !== -1 && end > start) {
-    return clean.slice(start, end + 1);
-  }
-  return clean;
+  if (!r.ok || d.error) throw new Error((d.error && d.error.message) ? d.error.message : 'API error');
+  var txt = Array.isArray(d.content) ? d.content.map(function(b){return b.text||'';}).join('') : '';
+  return txt;
 }
 
 var stars=parseInt(localStorage.getItem('ss')||'0');
-var cnt=parseInt(localStorage.getItem('sc2')||'0');
+var cnt=parseInt(localStorage.getItem('sc')||'0');
 var bdgs=JSON.parse(localStorage.getItem('sb')||'[]');
 var hist=JSON.parse(localStorage.getItem('sh')||'[]');
-var hsc=parseInt(localStorage.getItem('shc')||'0');
-var etype='persuasive';
-var qs=[],qi=0,stype='interview';
+var stype='interview';
+var qnum=0;
 var cs=300,cr=false,ci=null;
-var ds2=1800,dr=false,di=null;
-var es=1800,er=false,ei=null;
+var currentQ=null;
 
-function sv(){localStorage.setItem('ss',stars);localStorage.setItem('sc2',cnt);localStorage.setItem('sb',JSON.stringify(bdgs));localStorage.setItem('sh',JSON.stringify(hist.slice(-30)));localStorage.setItem('shc',hsc);}
-function uh(){document.getElementById('sc').textContent=stars;var lv=LV.find(function(l){return stars>=l.min&&stars<=l.max;})||LV[LV.length-1];var li=LV.indexOf(lv);var pct=Math.round(Math.min(100,(stars-lv.min)/(lv.max-lv.min+1)*100));document.getElementById('lf').style.width=pct+'%';document.getElementById('lt').textContent='Level '+(li+1)+' - '+lv.n;if(li===5)ab('lum');}
+function save(){localStorage.setItem('ss',stars);localStorage.setItem('sc',cnt);localStorage.setItem('sb',JSON.stringify(bdgs));localStorage.setItem('sh',JSON.stringify(hist.slice(-30)));}
+function uh(){document.getElementById('sc').textContent=stars;var lv=LV.find(function(l){return stars>=l.min&&stars<=l.max;})||LV[LV.length-1];var li=LV.indexOf(lv);document.getElementById('lf').style.width=Math.round(Math.min(100,(stars-lv.min)/(lv.max-lv.min+1)*100))+'%';document.getElementById('lt').textContent='Level '+(li+1)+' - '+lv.n;if(li===5)ab('lum');}
 uh();
-function as2(n){stars+=n;uh();sv();}
-function ab(id){if(bdgs.includes(id))return;bdgs.push(id);sv();}
-function go(t){['practice','essay','diary','badges','progress'].forEach(function(x){document.getElementById('t-'+x).classList.add('hide');});document.getElementById('t-'+t).classList.remove('hide');document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('on');});var ts=['practice','essay','diary','badges','progress'];document.querySelectorAll('.nb')[ts.indexOf(t)].classList.add('on');if(t==='badges')rb();if(t==='progress')rp();}
+function as(n){stars+=n;uh();save();}
+function ab(id){if(bdgs.includes(id))return;bdgs.push(id);save();}
+function go(t){['practice','badges','progress'].forEach(function(x){document.getElementById('t-'+x).classList.add('hide');});document.getElementById('t-'+t).classList.remove('hide');document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('on');});['practice','badges','progress'].forEach(function(x,i){if(x===t)document.querySelectorAll('.nb')[i].classList.add('on');});if(t==='badges')rb();if(t==='progress')rp();}
 function rb(){document.getElementById('bg').innerHTML=BDG.map(function(b){return '<div class="bdg'+(bdgs.includes(b.id)?'':' locked')+'"><i class="ti '+b.icon+' bdg-icon"></i><div class="bdg-name">'+b.name+'</div><div class="bdg-desc">'+(bdgs.includes(b.id)?b.desc:'???')+'</div></div>';}).join('');}
-function rp(){var p=document.getElementById('pc');p.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:1rem"><div style="background:white;border:1.5px solid #FFD6E7;border-radius:10px;padding:10px;text-align:center"><div style="font-size:11px;color:#993556;font-weight:600;margin-bottom:3px">Stars</div><div style="font-size:24px;font-weight:700;color:#C43060">'+stars+'</div></div><div style="background:white;border:1.5px solid #FFD6E7;border-radius:10px;padding:10px;text-align:center"><div style="font-size:11px;color:#993556;font-weight:600;margin-bottom:3px">Questions</div><div style="font-size:24px;font-weight:700;color:#C43060">'+cnt+'</div></div><div style="background:white;border:1.5px solid #FFD6E7;border-radius:10px;padding:10px;text-align:center"><div style="font-size:11px;color:#993556;font-weight:600;margin-bottom:3px">Badges</div><div style="font-size:24px;font-weight:700;color:#C43060">'+bdgs.length+'</div></div></div>'+(hist.length===0?'<div style="text-align:center;color:#993556;font-size:14px;padding:2rem 0">Answer some questions to see your progress!</div>':hist.slice(-8).reverse().map(function(s){return '<div style="background:white;border:1.5px solid #FFD6E7;border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:13px;font-weight:600;color:#3D0D1E">'+(s.topic||'Interview')+'</div><div style="font-size:11px;color:#993556;margin-top:2px">'+s.date+'</div></div><div style="text-align:right"><div style="font-size:20px;font-weight:700;color:'+((s.score||0)>=8?'#1D9E75':(s.score||0)>=6?'#C43060':'#E8A020')+'">'+(s.score||0)+'/10</div><div style="font-size:11px;color:#993556">+'+s.se+' stars</div></div></div>';}).join(''));}
+function rp(){document.getElementById('pc').innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem"><div style="background:white;border:1.5px solid #FFD6E7;border-radius:10px;padding:12px;text-align:center"><div style="font-size:11px;color:#993556;margin-bottom:3px">Stars</div><div style="font-size:28px;font-weight:700;color:#C43060">'+stars+'</div></div><div style="background:white;border:1.5px solid #FFD6E7;border-radius:10px;padding:12px;text-align:center"><div style="font-size:11px;color:#993556;margin-bottom:3px">Questions</div><div style="font-size:28px;font-weight:700;color:#C43060">'+cnt+'</div></div></div>'+(hist.length===0?'<div style="text-align:center;color:#993556;padding:2rem 0">Answer questions to see your progress!</div>':hist.slice(-8).reverse().map(function(s){return '<div style="background:white;border:1.5px solid #FFD6E7;border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div style="font-size:13px;font-weight:600;color:#3D0D1E">'+(s.topic||'Interview')+'<div style="font-size:11px;color:#993556;margin-top:2px">'+s.date+'</div></div><div style="font-size:20px;font-weight:700;color:'+((s.score||0)>=8?'#1D9E75':(s.score||0)>=6?'#C43060':'#E8A020')+'">'+(s.score||0)+'/10</div></div>';}).join('')));}
 
-function qSys(note,n){return 'You are a private-school interview coach for Grade 6 student Summer applying to Langley Christian School. Develop moral reasoning, self-awareness, courage, leadership, and faith. Draw from Stoic philosophy. '+note+' Generate '+n+' questions.'+JSON_RULE+' Use this exact JSON structure: {"questions":[{"topic":"string","question":"string","stoic_idea":"string","stoic_quote":"string","stoic_quote_meaning":"string","followup1":"string","what_tested":"string","thinking_hint":"string"}]}';}
-function fbSys(){return 'You are an honest interview coach for Grade 6 girl Summer. Score strictly: 9-10 impressive depth; 7-8 good but could go deeper; 5-6 surface level; 3-4 generic; 1-2 missed the point.'+JSON_RULE+' Use this exact JSON structure: {"scores":{"thought":5,"clarity":5,"honesty":5,"courage":5,"self_awareness":5,"depth":5},"overall":5,"weak_dim":"specificity","stars_earned":3,"what_worked":"string","what_fell_flat":"string","coach_nudge":"string","stronger_version":"string","encouragement":"string"}';}
-function epSys(t){return 'You are an essay prompt writer for Grade 6 girl Summer applying to Langley Christian School. Write ONE deep '+t+' essay prompt requiring clear argument, real examples, and genuine reflection on values.'+JSON_RULE+' Use this exact JSON structure: {"prompt":"string"}';}
-function egSys(sh){return 'You are a rigorous essay evaluator for Grade 6 Christian school admissions.'+(sh?' Short essay - penalize.':'')+' Score 9-10 exceptional; 7-8 good; 5-6 surface; 3-4 vague.'+JSON_RULE+' Use this exact JSON structure: {"scores":{"argument":5,"evidence":5,"voice":5,"structure":5,"values_depth":5,"courage":5},"overall":5,"letter_grade":"B","overall_note":"string","strongest_part":"string","biggest_weakness":"string","one_revision_to_raise_grade":"string","honest_verdict":"string"}';}
-function dpSys(){return 'You are a journal prompt writer for Grade 6 girl Summer. Write ONE deep reflective journaling prompt. Invite personal meaningful thinking. Draw on Stoic and Christian themes.'+JSON_RULE+' Use this exact JSON structure: {"prompt":"string"}';}
-function dfSys(){return 'You are a journal coach for Grade 6 girl Summer. Read her entry with care. Do not grade it. Respond like a wise mentor.'+JSON_RULE+' Use this exact JSON structure: {"observation":"string","follow_up_question":"string","philosophical_connection":"string","strength_seen":"string","stars_earned":3}';}
-
-async function run(type){
-  stype=type;qs=[];qi=0;
+function startQ(type) {
+  stype=type;qnum=0;
   document.getElementById('sv').classList.add('hide');
-  document.getElementById('lv').classList.remove('hide');
-  document.getElementById('done').classList.add('hide');
-  var n=type==='rapid'?5:type==='dilemma'?6:10;
-  var note=type==='dilemma'?'Generate ONLY moral dilemma questions with no right answer.':type==='rapid'?'Generate short punchy questions for 90-second answers.':'Generate questions covering friendship, faith, leadership, conflict, character, family, mistakes.';
-  document.getElementById('lmsg').textContent='Creating your questions...';
-  try{
-    var raw=await api(qSys(note,n),'Generate the question set now.',2000);
-    var parsed=JSON.parse(raw);
-    qs=parsed.questions||[];
-    document.getElementById('lv').classList.add('hide');
-    document.getElementById('qv').classList.remove('hide');
-    if(type==='dilemma')ab('dilemma');
-    if(type==='rapid')ab('rapid');
-    rdots();rq();tick2(type==='rapid'?90:300);
-  }catch(e){document.getElementById('lv').classList.add('hide');document.getElementById('sv').classList.remove('hide');alert('Error: '+e.message);}
-}
-
-function rdots(){document.getElementById('qdots').innerHTML=qs.map(function(_,i){return '<div class="dot-item" style="background:'+(i<qi?'#E8527A':i===qi?'#C43060':'#FFD6E7')+'"></div>';}).join('');}
-function rq(){
-  if(qi>=qs.length){fin();return;}
-  var q=qs[qi];
-  document.getElementById('qctr').textContent='Q'+(qi+1)+'/'+qs.length;
-  var h='<div class="qbox"><span class="qtag">'+q.topic+'</span><p class="qtxt">'+q.question+'</p>'+(q.thinking_hint?'<p class="qhint"><i class="ti ti-bulb" style="color:#E8527A"></i> Think about: '+q.thinking_hint+'</p>':'')+'</div>';
-  if(q.stoic_quote){h+='<div class="stoic"><div style="font-size:11px;font-weight:700;color:#7A1A3A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px"><i class="ti ti-flame"></i> Marcus Aurelius</div><p class="sq">'+q.stoic_quote+'</p><p class="se">'+(q.stoic_quote_meaning||'')+' - '+(q.stoic_idea||'')+'</p></div>';}
-  if(q.followup1){h+='<div class="fu"><strong style="color:#E8527A">They might ask:</strong> '+q.followup1+'</div>';}
-  document.getElementById('qarea').innerHTML=h;
+  document.getElementById('qv').classList.remove('hide');
   document.getElementById('fba').classList.add('hide');
-  document.getElementById('aw').classList.remove('hide');
-  document.getElementById('ain').value='';
+  document.getElementById('aw').classList.add('hide');
+  if(type==='dilemma')ab('dilemma');
+  if(type==='rapid')ab('rapid');
+  loadQ();
 }
 
-function tick2(s){cs=s;cr=true;ud();if(ci)clearInterval(ci);ci=setInterval(tc,1000);document.getElementById('pbtn').innerHTML='<i class="ti ti-player-pause"></i>';}
+var TOPICS=['friendship','faith','leadership','conflict','character','family','mistakes','social issues','honesty','courage'];
+var usedTopics=[];
+
+async function loadQ() {
+  document.getElementById('fba').classList.add('hide');
+  document.getElementById('aw').classList.add('hide');
+  qnum++;
+  document.getElementById('qprog').textContent='Question '+qnum;
+  document.getElementById('qarea').innerHTML='<div class="ld"><div class="d"></div><div class="d"></div><div class="d"></div><span>Getting your question...</span></div>';
+
+  var topic=TOPICS[Math.floor(Math.random()*TOPICS.length)];
+  var timeLimit=stype==='rapid'?90:300;
+  var typeNote=stype==='dilemma'?'Make it a moral dilemma with no clearly right answer.':stype==='rapid'?'Make it short and direct.':'Make it thoughtful and challenging.';
+
+  var sys='You are a private-school interview coach for Grade 6 student Summer applying to Langley Christian School. Generate ONE interview question about '+topic+'. '+typeNote+' Return ONLY a JSON object with these exact fields: {"topic":"'+topic+'","question":"the question text","hint":"one thinking hint","followup":"one follow-up question","stoic_quote":"a short Marcus Aurelius quote","stoic_meaning":"what it means for an 11 year old"}. Keep all text SHORT. No apostrophes in values.';
+
+  try {
+    var raw=await api(sys,'Generate one interview question now.');
+    var obj=JSON.parse(raw);
+    currentQ=obj;
+    var h='<div class="qbox"><span class="qtag">'+obj.topic+'</span><p class="qtxt" style="margin-top:8px">'+obj.question+'</p>'+(obj.hint?'<p class="qhint"><i class="ti ti-bulb" style="color:#E8527A"></i> Think about: '+obj.hint+'</p>':'')+'</div>';
+    if(obj.stoic_quote){h+='<div class="stoic"><div style="font-size:11px;font-weight:700;color:#7A1A3A;margin-bottom:6px"><i class="ti ti-flame"></i> Marcus Aurelius</div><p class="sq">'+obj.stoic_quote+'</p><p class="se">'+obj.stoic_meaning+'</p></div>';}
+    if(obj.followup){h+='<div class="fu"><strong style="color:#E8527A">They might ask:</strong> '+obj.followup+'</div>';}
+    document.getElementById('qarea').innerHTML=h;
+    document.getElementById('aw').classList.remove('hide');
+    document.getElementById('ain').value='';
+    startClock(timeLimit);
+  } catch(e) {
+    document.getElementById('qarea').innerHTML='<div style="color:#993556;padding:1rem">Could not load question. <button class="btn2" onclick="loadQ()">Try again</button></div>';
+  }
+}
+
+function startClock(s){cs=s;cr=true;ud();if(ci)clearInterval(ci);ci=setInterval(tc,1000);document.getElementById('pbtn').innerHTML='<i class="ti ti-player-pause"></i>';}
 function tc(){if(!cr)return;cs--;if(cs<=0){cs=0;clearInterval(ci);cr=false;document.getElementById('clbl').textContent='Time is up!';}ud();}
 function ud(){var m=Math.floor(cs/60),s=cs%60;var el=document.getElementById('cnum');el.textContent=m+':'+(s<10?'0':'')+s;el.className='clk-num'+(cs<30?' danger':cs<90?' warn':'');}
 function pause(){cr=!cr;document.getElementById('pbtn').innerHTML=cr?'<i class="ti ti-player-pause"></i>':'<i class="ti ti-player-play"></i>';}
-function skip(){if(ci)clearInterval(ci);qi++;rdots();if(qi>=qs.length){fin();return;}rq();tick2(stype==='rapid'?90:300);}
+function nextQ(){if(ci)clearInterval(ci);loadQ();}
 
-async function submit(){
+async function submitAns() {
   var a=document.getElementById('ain').value.trim();
   if(!a){alert('Write something first!');return;}
   if(ci)clearInterval(ci);cr=false;
   document.getElementById('aw').classList.add('hide');
   var fb=document.getElementById('fba');fb.classList.remove('hide');
   fb.innerHTML='<div class="ld"><div class="d"></div><div class="d"></div><div class="d"></div><span>Reading your answer...</span></div>';
-  var q=qs[qi];
-  try{
-    var raw=await api(fbSys(),'Topic: '+q.topic+' Question: '+q.question+' Answer: '+a,2000);
+
+  var sys='You are an honest interview coach for Grade 6 girl Summer. Score strictly. 9-10 impressive depth; 7-8 good; 5-6 surface; 3-4 generic. Return ONLY a JSON object with these exact fields: {"overall":7,"stars":3,"thought":7,"clarity":7,"honesty":7,"courage":7,"worked":"what worked well","deeper":"what could go deeper","nudge":"one follow-up question","stronger":"a stronger version in child voice","cheer":"one encouraging sentence"}. Keep all text SHORT. No apostrophes in values.';
+  var usr='Question: '+currentQ.question+' Answer: '+a;
+
+  try {
+    var raw=await api(sys,usr);
     var d=JSON.parse(raw);
-    var se=d.stars_earned||2;
-    as2(se);cnt++;
+    var se=d.stars||2;
+    as(se);cnt++;
     if(cnt===1)ab('first');
     if(cnt>=5)ab('five');
     if(cnt>=10)ab('ten');
-    if((d.scores||{}).honesty>=8)ab('honest');
-    if(d.overall>=9){ab('deep');hsc++;if(hsc>=3)ab('high');}
-    if(q.stoic_quote)ab('stoic');
-    hist.push({topic:q.topic,score:d.overall||0,se:se,date:new Date().toLocaleDateString()});
-    sv();uh();
-    var sc=d.scores||{},ov=d.overall||0,c2=ov>=8?'#1D9E75':ov>=6?'#C43060':'#E8A020';
-    var h='<div class="anim"><div class="pop-box"><div class="pop-stars">'+Array(se).fill('\u2605').join(' ')+'</div><div class="pop-title">+'+se+' stars!</div><div class="pop-msg">'+(d.encouragement||'Keep going!')+'</div></div>';
-    h+='<div style="text-align:center;padding:.75rem 0 .5rem"><div style="font-size:12px;color:#993556;margin-bottom:4px">Overall score</div><div style="font-size:48px;font-weight:700;color:'+c2+'">'+ov+'<span style="font-size:18px;color:#993556">/10</span></div><div style="font-size:12px;color:#993556;margin-top:4px">Focus: '+(d.weak_dim||'').replace(/_/g,' ')+'</div></div>';
+    if((d.honesty||0)>=8)ab('honest');
+    if((d.overall||0)>=9)ab('deep');
+    hist.push({topic:currentQ.topic,score:d.overall||0,date:new Date().toLocaleDateString()});
+    save();uh();
+    var ov=d.overall||0,c2=ov>=8?'#1D9E75':ov>=6?'#C43060':'#E8A020';
+    var h='<div class="anim"><div class="pop-box"><div class="pop-stars">'+Array(se).fill('\u2605').join(' ')+'</div><div class="pop-title">+'+se+' stars!</div><div class="pop-msg">'+(d.cheer||'Keep going!')+'</div></div>';
+    h+='<div style="text-align:center;padding:.75rem 0 .5rem"><div style="font-size:36px;font-weight:700;color:'+c2+'">'+ov+'<span style="font-size:16px;color:#993556">/10</span></div></div>';
     h+='<div class="sbars">';
-    var si=[['Thought',sc.thought],['Clarity',sc.clarity],['Honesty',sc.honesty],['Courage',sc.courage],['Awareness',sc.self_awareness],['Depth',sc.depth]];
+    var si=[['Thought',d.thought],['Clarity',d.clarity],['Honesty',d.honesty],['Courage',d.courage]];
     for(var x=0;x<si.length;x++){var vv=si[x][1]||0;h+='<div class="sb"><div class="sb-l">'+si[x][0]+'</div><div class="sb-v">'+vv+'/10</div><div class="sb-t"><div class="sb-f" style="width:'+(vv*10)+'%;background:'+(vv>=8?'#1D9E75':'#E8527A')+'"></div></div></div>';}
     h+='</div><hr>';
-    if(d.what_worked)h+='<div class="fb g"><div class="fb-l">What worked</div><div class="fb-t">'+d.what_worked+'</div></div>';
-    if(d.what_fell_flat)h+='<div class="fb w"><div class="fb-l">Could go deeper</div><div class="fb-t">'+d.what_fell_flat+'</div></div>';
-    if(d.coach_nudge)h+='<div class="fb p"><div class="fb-l">Think about this</div><div class="fb-t">'+d.coach_nudge+'</div></div>';
-    if(d.stronger_version)h+='<div class="fb"><div class="fb-l">A stronger version</div><div class="fb-t" style="font-style:italic">'+d.stronger_version+'</div></div>';
-    h+='<div style="margin-top:12px" class="row"><button class="btn f1" onclick="nxt()"><i class="ti ti-arrow-right"></i> '+(qi+1<qs.length?'Next question':'Finish session')+'</button></div></div>';
+    if(d.worked)h+='<div class="fb g"><div class="fb-l">What worked</div><div class="fb-t">'+d.worked+'</div></div>';
+    if(d.deeper)h+='<div class="fb w"><div class="fb-l">Could go deeper</div><div class="fb-t">'+d.deeper+'</div></div>';
+    if(d.nudge)h+='<div class="fb p"><div class="fb-l">Think about this</div><div class="fb-t">'+d.nudge+'</div></div>';
+    if(d.stronger)h+='<div class="fb"><div class="fb-l">A stronger version</div><div class="fb-t" style="font-style:italic">'+d.stronger+'</div></div>';
+    h+='<div style="margin-top:12px" class="row"><button class="btn f1" onclick="nextQ()"><i class="ti ti-arrow-right"></i> Next question</button><button class="btn2" onclick="endSession()">Finish</button></div></div>';
     fb.innerHTML=h;
-  }catch(e){fb.innerHTML='<div style="color:#993556;font-size:14px;padding:1rem">Error: '+e.message+'</div>';document.getElementById('aw').classList.remove('hide');}
+  } catch(e) {
+    fb.innerHTML='<div style="color:#993556;padding:1rem">Error: '+e.message+'<br><button class="btn2" style="margin-top:8px" onclick="submitAns()">Try again</button></div>';
+    document.getElementById('aw').classList.remove('hide');
+  }
 }
 
-function nxt(){qi++;rdots();if(qi>=qs.length){fin();return;}rq();tick2(stype==='rapid'?90:300);}
-function fin(){
+function endSession(){
   if(ci)clearInterval(ci);
   document.getElementById('qv').classList.add('hide');
-  var dn=document.getElementById('done');dn.classList.remove('hide');
-  var sc=hist.slice(-qs.length).map(function(h){return h.score||0;});
-  var avg=sc.length?Math.round(sc.reduce(function(a,b){return a+b;},0)/sc.length*10)/10:0;
-  dn.innerHTML='<div class="pop-box anim"><div class="pop-stars" style="font-size:44px">\u2605 \u2605 \u2605</div><div class="pop-title" style="font-size:24px">Session complete!</div><div style="font-size:14px;color:#993556;margin:8px 0">Avg: <strong style="color:#C43060">'+avg.toFixed(1)+'/10</strong></div><div class="pop-msg">Every question you answer seriously makes your mind stronger.</div></div><div style="margin-top:10px" class="row"><button class="btn f1" onclick="rst()"><i class="ti ti-refresh"></i> Practice again</button><button class="btn2" onclick="go(\'progress\')"><i class="ti ti-chart-bar"></i> Progress</button></div>';
-}
-function rst(){document.getElementById('done').classList.add('hide');document.getElementById('qv').classList.add('hide');document.getElementById('sv').classList.remove('hide');}
-
-function et(t){etype=t;['persuasive','reflective','moral'].forEach(function(x){var id=x==='persuasive'?'ep':x==='reflective'?'er':'em';var el=document.getElementById(id);el.style.background=x===t?'#FFF0F5':'white';el.style.border=x===t?'1.5px solid #FFB3CE':'1.5px solid #FFD6E7';el.style.fontWeight=x===t?'600':'400';});}
-
-async function startEssay(){
-  document.getElementById('es').classList.add('hide');
-  document.getElementById('el').classList.remove('hide');
-  document.getElementById('ef').classList.add('hide');
-  try{
-    var raw=await api(epSys(etype),'Give me one essay prompt.',500);
-    var d=JSON.parse(raw);
-    var p=d.prompt||raw;
-    window.ep=p.trim();
-    document.getElementById('el').classList.add('hide');
-    document.getElementById('epc').innerHTML='<span class="qtag">'+etype+' essay - 30 min</span><p class="qtxt" style="margin-top:8px">'+p.trim()+'</p>';
-    document.getElementById('etxt').value='';document.getElementById('ewcd').textContent='0 words';
-    document.getElementById('ea').classList.remove('hide');startEClock();
-  }catch(e){document.getElementById('el').classList.add('hide');document.getElementById('es').classList.remove('hide');alert('Error: '+e.message);}
-}
-function startEClock(){es=1800;er=true;uec();if(ei)clearInterval(ei);ei=setInterval(te,1000);document.getElementById('epbtn').innerHTML='<i class="ti ti-player-pause"></i>';}
-function te(){if(!er)return;es--;if(es<=0){es=0;clearInterval(ei);er=false;}uec();}
-function uec(){var m=Math.floor(es/60),s=es%60;var el=document.getElementById('eck');el.textContent=m+':'+(s<10?'0':'')+s;el.className='clk-num'+(es<300?' danger':es<600?' warn':'');}
-function epause(){er=!er;document.getElementById('epbtn').innerHTML=er?'<i class="ti ti-player-pause"></i>':'<i class="ti ti-player-play"></i>';}
-function ewc(){var t=document.getElementById('etxt').value.trim();document.getElementById('ewcd').textContent=(t?t.split(/\s+/).length:0)+' words';}
-
-async function submitEssay(){
-  if(ei)clearInterval(ei);er=false;
-  var txt=document.getElementById('etxt').value.trim();
-  if(txt.length<30){alert('Write more first!');return;}
-  var wds=txt.split(/\s+/).length,tm=Math.round((1800-es)/60);
-  document.getElementById('ea').classList.add('hide');document.getElementById('el').classList.remove('hide');
-  try{
-    var raw=await api(egSys(wds<150),'Prompt: '+(window.ep||'')+' Time: '+tm+' min. Words: '+wds+'. Essay: '+txt,2000);
-    var d=JSON.parse(raw);
-    as2(d.overall>=8?5:d.overall>=6?3:2);ab('essay');sv();uh();
-    document.getElementById('el').classList.add('hide');
-    var s=d.scores||{};
-    var gcMap={'A':'#1D9E75','B':'#C43060','C':'#E8A020','D':'#A32D2D','F':'#A32D2D'};
-    var gc=gcMap[d.letter_grade]||'#C43060';
-    var h='<div class="anim"><div style="display:flex;align-items:center;gap:1.5rem;background:white;border:1.5px solid #FFD6E7;border-radius:16px;padding:1.25rem;margin-bottom:10px"><div style="text-align:center;min-width:60px"><div style="font-size:12px;color:#993556;margin-bottom:2px">Grade</div><div style="font-size:52px;font-weight:700;color:'+gc+';line-height:1">'+(d.letter_grade||'C')+'</div></div><div><div style="font-size:12px;color:#993556">Score</div><div style="font-size:30px;font-weight:700;color:'+gc+'">'+(d.overall||0)+'/10</div><div style="font-size:12px;color:#993556;margin-top:2px">'+wds+' words</div></div></div>';
-    h+='<div class="sbars">';
-    var ei2=[['Argument',s.argument],['Evidence',s.evidence],['Voice',s.voice],['Structure',s.structure],['Values',s.values_depth],['Courage',s.courage]];
-    for(var xi=0;xi<ei2.length;xi++){var ev=ei2[xi][1]||0;h+='<div class="sb"><div class="sb-l">'+ei2[xi][0]+'</div><div class="sb-v">'+ev+'/10</div><div class="sb-t"><div class="sb-f" style="width:'+(ev*10)+'%;background:'+(ev>=8?'#1D9E75':'#E8527A')+'"></div></div></div>';}
-    h+='</div>';
-    if(d.strongest_part)h+='<div class="fb g"><div class="fb-l">Strongest part</div><div class="fb-t">'+d.strongest_part+'</div></div>';
-    if(d.biggest_weakness)h+='<div class="fb w"><div class="fb-l">Biggest weakness</div><div class="fb-t">'+d.biggest_weakness+'</div></div>';
-    if(d.one_revision_to_raise_grade)h+='<div class="fb p"><div class="fb-l">One revision to raise grade</div><div class="fb-t">'+d.one_revision_to_raise_grade+'</div></div>';
-    if(d.honest_verdict)h+='<div style="background:#FFF0F5;border:1.5px solid #FFB3CE;border-radius:10px;padding:10px 14px;font-size:13px;color:#7A1A3A;margin-top:8px">'+d.honest_verdict+'</div>';
-    h+='<div style="margin-top:12px" class="row"><button class="btn f1" onclick="startEssay()"><i class="ti ti-refresh"></i> New prompt</button></div></div>';
-    var efEl=document.getElementById('ef');efEl.innerHTML=h;efEl.classList.remove('hide');
-  }catch(e){document.getElementById('el').classList.add('hide');document.getElementById('ea').classList.remove('hide');alert('Error: '+e.message);}
-}
-
-async function startDiary(){
-  document.getElementById('ds').classList.add('hide');document.getElementById('dl').classList.remove('hide');
-  try{
-    var raw=await api(dpSys(),'Give me one journaling prompt.',500);
-    var d=JSON.parse(raw);
-    var p=d.prompt||raw;
-    window.dp=p.trim();
-    document.getElementById('dl').classList.add('hide');
-    document.getElementById('dpt').textContent=p.trim();
-    document.getElementById('dtxt').value='';document.getElementById('dwcd').textContent='0 words';
-    document.getElementById('da').classList.remove('hide');startDClock();
-  }catch(e){document.getElementById('dl').classList.add('hide');document.getElementById('ds').classList.remove('hide');alert('Error: '+e.message);}
-}
-function startDClock(){ds2=1800;dr=true;udc();if(di)clearInterval(di);di=setInterval(td,1000);document.getElementById('dpbtn').innerHTML='<i class="ti ti-player-pause"></i>';}
-function td(){if(!dr)return;ds2--;if(ds2<=0){ds2=0;clearInterval(di);dr=false;}udc();}
-function udc(){var m=Math.floor(ds2/60),s=ds2%60;var el=document.getElementById('dck');el.textContent=m+':'+(s<10?'0':'')+s;el.className='clk-num'+(ds2<300?' danger':ds2<600?' warn':'');}
-function dpause(){dr=!dr;document.getElementById('dpbtn').innerHTML=dr?'<i class="ti ti-player-pause"></i>':'<i class="ti ti-player-play"></i>';}
-function dwc(){var t=document.getElementById('dtxt').value.trim();document.getElementById('dwcd').textContent=(t?t.split(/\s+/).length:0)+' words';}
-function resetDiary(){if(di)clearInterval(di);document.getElementById('da').classList.add('hide');document.getElementById('df').classList.add('hide');document.getElementById('ds').classList.remove('hide');}
-
-async function submitDiary(){
-  if(di)clearInterval(di);dr=false;
-  var txt=document.getElementById('dtxt').value.trim();
-  if(txt.length<30){alert('Write more first!');return;}
-  var wds=txt.split(/\s+/).length;
-  document.getElementById('da').classList.add('hide');document.getElementById('dl').classList.remove('hide');
-  try{
-    var raw=await api(dfSys(),'Prompt: '+(window.dp||'')+' Entry ('+wds+' words): '+txt,2000);
-    var d=JSON.parse(raw);
-    as2(d.stars_earned||3);ab('diary');sv();uh();
-    document.getElementById('dl').classList.add('hide');
-    var dfEl=document.getElementById('df');
-    var h='<div class="anim"><div class="pop-box" style="margin-bottom:1rem"><div class="pop-stars">\u2605 \u2605 \u2605</div><div class="pop-title">+'+(d.stars_earned||3)+' stars earned</div><div class="pop-msg">Your thoughts matter. Writing honestly takes courage.</div></div>';
-    if(d.observation)h+='<div class="fb g"><div class="fb-l">What I noticed</div><div class="fb-t">'+d.observation+'</div></div>';
-    if(d.follow_up_question)h+='<div class="fb p"><div class="fb-l">A question to sit with</div><div class="fb-t">'+d.follow_up_question+'</div></div>';
-    if(d.philosophical_connection)h+='<div class="fb" style="background:#FFD6E7"><div class="fb-l">A thought from history</div><div class="fb-t">'+d.philosophical_connection+'</div></div>';
-    if(d.strength_seen)h+='<div class="fb g"><div class="fb-l">A strength I see in you</div><div class="fb-t">'+d.strength_seen+'</div></div>';
-    h+='<div style="margin-top:12px"><button class="btn" onclick="resetDiary()" style="width:100%"><i class="ti ti-refresh"></i> Write another entry</button></div></div>';
-    dfEl.innerHTML=h;dfEl.classList.remove('hide');
-  }catch(e){document.getElementById('dl').classList.add('hide');document.getElementById('da').classList.remove('hide');alert('Error: '+e.message);}
+  document.getElementById('sv').classList.remove('hide');
 }
 </script>
 </body>
