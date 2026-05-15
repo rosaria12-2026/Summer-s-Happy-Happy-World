@@ -2,10 +2,20 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') { res.status(200).end(); return; }
+
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
   try {
-    var body = req.body;
-    var response = await fetch('https://api.anthropic.com/v1/messages', {
+    const { system, user, max_tokens } = req.body;
+
+    if (!user) {
+      return res.status(400).json({ error: 'user content is required' });
+    }
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -13,28 +23,58 @@ export default async function handler(req, res) {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5',
-        max_tokens: body.max_tokens || 4000,
-        system: body.system,
-        messages: [{ role: 'user', content: body.user }]
+        model: 'claude-3-5-haiku-20241022',   // 推荐使用真实模型
+        max_tokens: max_tokens || 4000,
+        system: system,
+        messages: [{ role: 'user', content: user }]
       })
     });
-    var data = await response.json();
+
+    if (!response.ok) {
+      const err = await response.json();
+      return res.status(response.status).json(err);
+    }
+
+    let data = await response.json();
+
+    // ==================== 强力 JSON 清理逻辑 ====================
     if (data.content && Array.isArray(data.content)) {
-      data.content = data.content.map(function(block) {
-        if (block.text) {
-          var text = block.text;
-          var start = text.indexOf('{');
-          var end = text.lastIndexOf('}');
+      data.content = data.content.map(block => {
+        if (block.type === 'text' && typeof block.text === 'string') {
+          let text = block.text.trim();
+
+          // 清理 markdown 代码块和多余说明文字
+          text = text
+            .replace(/```json\s*/gi, '')
+            .replace(/```\s*$/gi, '')
+            .replace(/^.*?(\{.*\})/s, '$1')   // 提取最后一个完整 JSON
+            .trim();
+
+          const start = text.indexOf('{');
+          const end = text.lastIndexOf('}');
+
           if (start !== -1 && end !== -1 && end > start) {
-            block.text = text.slice(start, end + 1);
+            let jsonStr = text.slice(start, end + 1);
+
+            // 关键清理，防止 Unterminated string
+            jsonStr = jsonStr
+              .replace(/\n/g, '\\n')
+              .replace(/\r/g, '')
+              .replace(/\t/g, '\\t')
+              .replace(/\\"/g, '\\\\"');
+
+            block.text = jsonStr;
+          } else {
+            block.text = text;
           }
         }
         return block;
       });
     }
+
     res.status(200).json(data);
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    console.error(e);
+    res.status(500).json({ error: e.message || 'Internal server error' });
   }
 }
