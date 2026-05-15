@@ -179,14 +179,11 @@ var BDG=[{id:'first',icon:'ti-message',name:'First words',desc:'Answered first q
 
 var JSON_RULE = ' Respond with ONLY valid JSON. No extra text, no markdown, no code blocks. Output the JSON object directly.';
 
-var AKEY = "";  // PUT YOUR API KEY HERE between the quotes
-
 async function api(sys, usr, mt) {
-  if (!AKEY) { alert('Please open this file in a text editor and add your API key to the AKEY variable at the top of the script.'); throw new Error('No API key'); }
-  var r = await fetch('https://api.anthropic.com/v1/messages', {
+  var r = await fetch('/api/chat', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-api-key': AKEY, 'anthropic-version': '2023-06-01' },
-    body: JSON.stringify({ model: 'claude-3-5-haiku-20241022', max_tokens: mt || 2000, system: sys, messages: [{ role: 'user', content: usr }] })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ system: sys, user: usr, max_tokens: mt || 2000 })
   });
   var d = await r.json();
   if (!r.ok || d.error) {
