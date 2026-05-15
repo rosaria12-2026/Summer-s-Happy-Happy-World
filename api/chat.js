@@ -24,25 +24,39 @@ export default async function handler(req, res) {
       data.content = data.content.map(block => {
         if (block.type === 'text' && block.text) {
           let text = block.text.trim();
-          // Remove markdown
           text = text.replace(/^```json\s*/i, '').replace(/\s*```\s*$/i, '').trim();
-          // Extract JSON boundaries
           const start = text.indexOf('{');
           const end = text.lastIndexOf('}');
           if (start !== -1 && end !== -1 && end > start) {
             text = text.slice(start, end + 1);
-            // Parse and re-stringify to fix all issues
             try {
-              const parsed = JSON.parse(text);
-              block.text = JSON.stringify(parsed);
+              // Parse and clean by re-stringifying
+              const obj = JSON.parse(text);
+              // Deep clean all string values
+              const clean = JSON.parse(JSON.stringify(obj, (key, val) => {
+                if (typeof val === 'string') {
+                  return val
+                    .replace(/\n/g, ' ')
+                    .replace(/\r/g, ' ')
+                    .replace(/\t/g, ' ')
+                    .replace(/\\/g, '')
+                    .trim();
+                }
+                return val;
+              }));
+              block.text = JSON.stringify(clean);
             } catch(e) {
-              // If parse fails, do manual cleanup
-              text = text
-                .replace(/\r\n/g, ' ')
-                .replace(/\r/g, ' ')
-                .replace(/\n/g, ' ')
-                .replace(/\t/g, ' ');
-              block.text = text;
+              // Manual fix for unterminated strings
+              let fixed = text
+                .replace(/[\r\n\t]/g, ' ')
+                .replace(/([^\\])\\([^"\\\/bfnrtu])/g, '$1$2')
+                .replace(/\s+/g, ' ');
+              try {
+                const obj2 = JSON.parse(fixed);
+                block.text = JSON.stringify(obj2);
+              } catch(e2) {
+                block.text = JSON.stringify({ error: 'Could not parse response' });
+              }
             }
           }
         }
